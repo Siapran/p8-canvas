@@ -5,7 +5,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 	local function dup(x, n)
 		if (n > 0) return x, dup(x, n-1)
 	end
-	local empty_tile = chr(dup(transparency, 32))
+	local empty_tile = chr(dup(transparency | (transparency << 4), 32))
 
 	local function read_tile(src, w, h)
 		local function read(acc, src, h)

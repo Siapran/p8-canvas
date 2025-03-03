@@ -119,7 +119,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 			local tile = tiles[(x&-8)|((y&-8)>>>16)]
 			if tile then
 				return (
-					ord(tile, ((y&7)<<2)|((x&7)>>>1)+1)
+					ord(tile, (((y&7)<<2)|((x&7)>>>1))+1)
 					>>> ((x&1)<<2)
 				) & 15
 			end

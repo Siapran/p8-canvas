@@ -5,11 +5,11 @@ function make_canvas(cache_bank, render_bank, transparency)
 	local function dup(x, n)
 		if (n > 0) return x, dup(x, n-1)
 	end
-	local empty_tile = chr(dup(transparency | (transparency << 4), 32))
+	local empty_tile = chr(dup(transparency | (transparency<<4), 32))
 
 	local function read_tile(src, w, h)
 		local function read(acc, src, h)
-			if (h > 0) return read(acc .. chr(peek(src, w)), src + 64, h-1)
+			if (h > 0) return read(acc .. chr(peek(src, w)), src+64, h-1)
 			return acc
 		end
 		return read("", src, h)
@@ -18,7 +18,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 	local function write_tile(tile, dst, w, h)
 		local off = 1
 		for i=0,h-1 do
-			poke(dst + (i << 6), ord(tile, off, w))
+			poke(dst + (i<<6), ord(tile, off, w))
 			off += w
 		end
 	end
@@ -41,7 +41,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 
 	for i=0,255 do
 		set_newest{ sprnum = i,
-			addr = cache_addr | ((i & -16) << 5) | ((i & 15) << 2)}
+			addr = cache_addr | ((i&-16)<<5) | ((i&15)<<2)}
 	end
 
 	local function cached_tile(tile)
@@ -59,7 +59,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 	end
 
 	local function cam_aware_clip(x, y, w, h, clip_prev)
-		clip(x - %0x5f28, y - %0x5f2a, w, h, clip_prev)
+		clip(x-%0x5f28, y-%0x5f2a, w, h, clip_prev)
 	end
 
 	local function draw_impl(x0, y0, x1, y1)
@@ -67,7 +67,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 		poke(0x5f54, cache_bank)
 		for y=y0,y1,8 do
 			for x=x0,x1,8 do
-				local tile = tiles[y | (x >>> 16)]
+				local tile = tiles[y | (x>>>16)]
 				if (tile) spr(cached_tile(tile), x, y)
 			end
 		end
@@ -100,11 +100,11 @@ function make_canvas(cache_bank, render_bank, transparency)
 
 			x1, y1 = mid(x1, 0x8000, x0+120), mid(y1, 0x8000, y0+120)
 			for y=y0,y1,8 do
-				local yoff = (y-y0) << 6
+				local yoff = (y-y0)<<6
 				for x=x0,x1,8 do
-					local addr = render_addr | yoff | ((x-x0) >>> 1)
+					local addr = render_addr | yoff | ((x-x0)>>>1)
 					local tile = read_tile(addr, 4, 8)
-					 tiles[y | (x >>> 16)] = tile ~= empty_tile and tile or nil
+					tiles[y | (x>>>16)] = tile ~= empty_tile and tile or nil
 				end
 			end
 			

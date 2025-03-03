@@ -34,5 +34,12 @@ notes:
 - maximum _safe_ update region size is 120x120, because of tile stradling
 - if you _know_ your region is tile aligned, then 128x128 is fine
 - drawing region can be as big as you like
+- this implementation works best for a panning view of the canvas: the more tiles can be reused from one frame to the next, the less cpu time it will take
+- don't use `camera` in the update function
 - you can have multiple canvases! just make sure they each have their own cache region
-- the cache and render regions should be picked from `0x0, 0x60, 0x80, 0xa0, 0xc0, 0xe0` (see the [remapping section of the pico-8 manual](https://www.lexaloffle.com/dl/docs/pico-8_manual.html#Remapping_Graphics_and_Map_Data).
+- the cache and render regions should be picked from `0x0, 0x60, 0x80, 0xa0, 0xc0, 0xe0` (see the [remapping section of the pico-8 manual](https://www.lexaloffle.com/dl/docs/pico-8_manual.html#Remapping_Graphics_and_Map_Data))
+
+under the hood:
+- canvas is stored as a sparse tilemap in Lua memory
+- tiles are unpacked into a sprite cache in RAM as needed when drawing
+- not much else, really, there's a couple clever things done with strings and tables but that's it

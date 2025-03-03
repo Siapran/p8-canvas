@@ -24,7 +24,7 @@ do
 	canvas.update(0, 0, 32, 32, function()
 		for y=0,31 do
 			for x=0,31 do
-				pset(x,y,rnd(16)\1)
+				pset(x,y,rnd(16)&-1)
 			end
 		end
 	end)
@@ -32,7 +32,7 @@ do
 	srand()
 	for y=0,31 do
 		for x=0,31 do
-			assert(canvas.pget(x,y) == rnd(16)\1)
+			assert(canvas.pget(x,y) == rnd(16)&-1)
 		end
 	end
 end

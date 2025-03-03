@@ -17,6 +17,9 @@ canvas.update(20000, 0, 32, 32, function()
     circfill(20000 + 16, 16, 6, 7)
 end)
 
+assert(canvas.pget(20016, 16) == 7)
+assert(canvas.pget(123, 2354) == 0)
+
 camera(-10000, 15000)
 canvas.draw() -- draws screen region by default (with camera offset applied)
 canvas.draw(-10000, 15000, 32, 32) -- draws an arbitrary region (may be offscreen)
@@ -38,6 +41,7 @@ notes:
 - don't use `camera` in the update function
 - you can have multiple canvases! just make sure they each have their own cache region
 - the cache and render regions should be picked from `0x0, 0x60, 0x80, 0xa0, 0xc0, 0xe0` (see the [remapping section of the pico-8 manual](https://www.lexaloffle.com/dl/docs/pico-8_manual.html#Remapping_Graphics_and_Map_Data))
+- you _can_ use the screen (`0x60`) as a rendering region, it's only written to when `canvas.update` is called
 
 under the hood:
 - canvas is stored as a sparse tilemap in Lua memory

@@ -37,4 +37,4 @@ do
 	end
 end
 
-print("all tests passed",7)
+print("all tests passed", 7)

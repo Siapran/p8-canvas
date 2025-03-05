@@ -55,9 +55,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 		return node.sprnum
 	end
 
-	local function cam_aware_clip(x, y, ...)
-		clip(x-%0x5f28, y-%0x5f2a, ...)
-	end
+
 
 	local function draw_impl(x0, y0, x1, y1)
 		local gfxbak = @0x5f54
@@ -65,42 +63,47 @@ function make_canvas(cache_bank, render_bank, transparency)
 		for y=y0,y1,8 do
 			local sy = y>>>16
 			for x=x0,x1,8 do
-				local tile = tiles[x | sy]
+				local tile = tiles[x|sy]
 				if (tile) spr(cached_tile(tile), x, y)
 			end
 		end
 		poke(0x5f54, gfxbak)
 	end
 
-	local function canv_draw(x, y, w, h)
-		if (not h) return canv_draw(%0x5f28, %0x5f2a, 128, 128)
-		local clipbak = $0x5f20
-		cam_aware_clip(x, y, w, h, true)
-		draw_impl(x&-8, y&-8, x+w & -8, y+h & -8)
+	local function canv_draw(cx, cy, w, h, sx, sy)
+		local ox, oy = cx-sx, cy-sy
+		local clipbak, cambak = $0x5f20, $0x5f28
+		clip(sx, sy, w, h, true)
+		camera(ox, oy)
+		draw_impl(@0x5f20+ox&-8, @0x5f21+oy&-8, @0x5f22+ox-1, @0x5f23+oy-1)
+		poke4(0x5f28, cambak)
 		poke4(0x5f20, clipbak)
 	end
 
 	return {
-		draw = canv_draw,
+		draw = function(sx, sy, w, h, dx, dy)
+			if (not sx) return canv_draw(%0x5f28, %0x5f2a, 128, 128, 0, 0)
+			return canv_draw(
+				sx, sy, w or 128, h or 128, (dx or 0)-%0x5f28, (dy or 0)-%0x5f2a)
+		end,
 		update = function(x, y, w, h, draw)
-			local x0, y0, x1, y1 = x&-8, y&-8, x+w & -8, y+h & -8
+			local x0, y0, x1, y1 = x&-8, y&-8, (x+w+7&-8)-1, (y+h+7&-8)-1
 
 			local clipbak, cambak, vidbak = $0x5f20, $0x5f28, @0x5f55
 			clip()
 			camera(x0, y0)
 			poke(0x5f55, render_bank)
 
-			rectfill(x0, y0, x1+8, y1+8, 0)
+			rectfill(x0, y0, x1, y1, 0)
 			draw_impl(x0, y0, x1, y1)
-			cam_aware_clip(x, y, w, h, true)
+			clip(x-%0x5f28, y-%0x5f2a, w, h, true)
 			draw()
 
-			x1, y1 = mid(x1, 0x8000, x0+120), mid(y1, 0x8000, y0+120)
 			for y=y0,y1,8 do
 				local yoff, sy = y-y0 << 6, y>>>16
 				for x=x0,x1,8 do
 					local tile = read_tile(render_addr | yoff | x-x0 >>> 1)
-					tiles[x | sy] = tile ~= empty_tile and tile or nil
+					tiles[x|sy] = tile ~= empty_tile and tile or nil
 				end
 			end
 			

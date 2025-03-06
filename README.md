@@ -75,4 +75,5 @@ canvas.draw()
 - updating works by drawing the target region of the canvas, applying the user-provided draw function, then reading the target region back into the canvas
 
 here is what the tile cache looks like as it is updated:
+
 ![tile cache](./img/cache.gif)

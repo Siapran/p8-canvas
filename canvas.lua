@@ -94,9 +94,9 @@ function make_canvas(cache_bank, render_bank, transparency)
 
 			local function iter(fn)
 				for y=0,th,8 do
-					local yoff, sy = y << 6, ty+y>>>16
+					local yoff, sy = y<<6, ty+y>>>16
 					for x=0,tw,8 do
-						fn(tx+x|sy, render_addr | yoff | x >>> 1)
+						fn(tx+x|sy, render_addr | yoff | x>>>1)
 					end
 				end
 			end

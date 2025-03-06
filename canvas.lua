@@ -1,11 +1,5 @@
 function make_canvas(cache_bank, render_bank, transparency)
-	local cache_addr, render_addr = cache_bank<<8, render_bank<<8
-
-	local function dup(x, n)
-		if (n > 0) return x, dup(x, n-1)
-	end
-	local empty_tile = chr(dup(transparency | transparency<<4, 32))
-
+	
 	local function read_tile(src)
 		local res = ""
 		for i=1,8 do
@@ -24,7 +18,14 @@ function make_canvas(cache_bank, render_bank, transparency)
 		end
 	end
 
-	local tiles, cache, list = {}, {}, {}
+	local cache_addr, render_addr, empty_tile, tiles, cache, list =
+		cache_bank<<8, render_bank<<8, chr(transparency | transparency<<4),
+		{}, {}, {}
+
+	for i=1,5 do
+		empty_tile..=empty_tile
+	end
+
 	list.next, list.prev = list, list
 
 	local function push_node(node)
@@ -51,8 +52,17 @@ function make_canvas(cache_bank, render_bank, transparency)
 		return node
 	end
 
-	local function canv_draw(cx, cy, w, h, sx, sy)
-		local clipbak, cambak, gfxbak = $0x5f20, $0x5f28, @0x5f54
+	local function pushed_ctx(bank, fn)
+		return function(...)
+			local pclip, pcam, pbank = $0x5f20, $0x5f28, @bank
+			fn(...)
+			poke4(0x5f28, pcam)
+			poke4(0x5f20, pclip)
+			poke(bank, pbank)
+		end
+	end
+
+	local canv_draw = pushed_ctx(0x5f54, function(cx, cy, w, h, sx, sy)
 		poke(0x5f54, cache_bank)
 		clip(sx, sy, w, h, true)
 		
@@ -69,11 +79,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 				if (tile) spr(cached_tile(tile).sprnum, x, y)
 			end
 		end
-		
-		poke4(0x5f28, cambak)
-		poke4(0x5f20, clipbak)
-		poke(0x5f54, gfxbak)
-	end
+	end)
 
 	return {
 		draw = function(sx, sy, w, h, dx, dy)
@@ -81,10 +87,8 @@ function make_canvas(cache_bank, render_bank, transparency)
 			return canv_draw(
 				sx, sy, w or 128, h or 128, (dx or 0)-%0x5f28, (dy or 0)-%0x5f2a)
 		end,
-		update = function(x, y, w, h, draw)
+		update = pushed_ctx(0x5f55, function(x, y, w, h, draw)
 			local tx, ty, tw, th = x&-8, y&-8, mid(w+7,120), mid(h+7,120)
-
-			local clipbak, cambak, vidbak = $0x5f20, $0x5f28, @0x5f55
 			camera(tx, ty)
 			poke(0x5f55, render_bank)
 
@@ -108,18 +112,11 @@ function make_canvas(cache_bank, render_bank, transparency)
 				local tile = read_tile(addr)
 				tiles[idx] = tile ~= empty_tile and tile or nil
 			end)
-			
-			poke(0x5f55, vidbak)
-			poke4(0x5f28, cambak)
-			poke4(0x5f20, clipbak)
-		end,
+		end),
 		pget = function(x, y)
-			local tile = tiles[x&-8 | y>>>16 & 0x0.fff8]
-			if tile then
-				return ord(tile, (y<<2 & 0x1c | x>>>1 & 0x03) + 1)
-					>>> (x<<2 & 0x4) & 15
-			end
-			return transparency
+			return ord(
+				tiles[x&-8 | y>>>16 & 0x0.fff8] or empty_tile,
+				(y<<2 & 0x1c | x>>>1 & 0x03) + 1) >>> (x<<2 & 0x4) & 15
 		end,
 		tiles = tiles
 	}

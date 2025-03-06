@@ -58,13 +58,14 @@ canvas.draw()
 - prerendered graphics
 
 ### notes:
-- maximum _safe_ update region size is 120x120, because of tile stradling
+- maximum _safe_ update region size is 121x121, because of tile stradling
 - if you _know_ your region is tile aligned, then 128x128 is fine
 - drawing region can be as big as you like, clipping will be applied to fit the screen
 - do not use `camera` or `clip` in the update function
 - you can have multiple canvases, just make sure they each have their own cache region
 - this implementation works best for a panning view of the canvas: the more tiles can be reused from one frame to the next, the less cpu time it will take
 - using two canvases is usually preferable to jumping around on a single canvas
+- updating the canvas does not use the cache, so updating all over the place is fine
 - the cache and render memory banks should be picked from `0x0, 0x60, 0x80, 0xa0, 0xc0, 0xe0` (see the [remapping section of the pico-8 manual](https://www.lexaloffle.com/dl/docs/pico-8_manual.html#Remapping_Graphics_and_Map_Data))
 - you _can_ use the screen (`0x60`) as a rendering region, it's only written to when `canvas.update` is called
 - the 2MB Lua RAM can hold about 40,000 8x8 tiles worth of data

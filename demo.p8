@@ -50,8 +50,8 @@ end
 function _draw()
 	cls()
 
-	-- alternatively:	
-	-- camera(cx, cy)
+	-- alternatively: 	
+	-- camera(canvas.cx, canvas.cy)
 	-- canvas.draw()
 
 	local tiles = 0

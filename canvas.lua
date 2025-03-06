@@ -32,10 +32,6 @@ function make_canvas(cache_bank, render_bank, transparency)
 		list.next, node.next.prev = node, node
 	end
 
-	local function remove_node(node)
-		node.prev.next, node.next.prev = node.next, node.prev
-	end
-
 	for i=0,255 do
 		push_node{ sprnum = i,
 			addr = cache_addr | i<<5 & 0xfe00 | i<<2 & 0x3c }
@@ -50,7 +46,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 			node.owner = tile
 			cache[tile] = node
 		end
-		remove_node(node)
+		node.prev.next, node.next.prev = node.next, node.prev
 		push_node(node)
 		return node
 	end

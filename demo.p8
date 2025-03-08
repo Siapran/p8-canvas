@@ -12,30 +12,29 @@ local canvas2 = make_canvas(0xa0, 0x60, 0)
 local canvas3 = make_canvas(0xc0, 0x60, 0)
 
 local canv_list = {canvas3, canvas2, canvas}
+local palettes = {{4, 9, 10}, {1, 13, 12}, {2, 8, 14}}
 
 poke(0x5f36,0x2)
 local frame = 0
 
-function update_canv(canv, t, cols)
-	canv.cx = -64 + sin(t/6) * 128
-	canv.cy = -64 + cos(t/6) * 128
-
-	if frame % 4 == 0 then
-		local x, y = canv.cx + 16 + rand(96), canv.cy + 16 + rand(96)
-		local r = rand(16) + 8
-		local c = rand(cols)
-
-		local x0, y0, w, h = x-r, y-r, 2*r+1, 2*r+1
-		canv.update(x0, y0, w, h, function()
-			circfill(x, y, r, c)
-		end)
-	end
-end
-
 function _update()
-	update_canv(canvas, time(), {2, 8, 14})
-	update_canv(canvas2, time() + 2, {1, 13, 12})
-	update_canv(canvas3, time() + 4, {4, 9, 10})
+	for i=1,3 do
+		local canv = canv_list[i]
+		local t = time() + i*2
+		canv.cx = -64 + sin(t/6) * 128
+		canv.cy = -64 + cos(t/6) * 128
+
+		if frame % 3 == i - 1 then
+			local x, y = canv.cx + 16 + rand(96), canv.cy + 16 + rand(96)
+			local r = rand(16) + 8
+			local c = rand(palettes[i])
+
+			local x0, y0, w, h = x-r, y-r, 2*r+1, 2*r+1
+			canv.update(x0, y0, w, h, function()
+				circfill(x, y, r, c)
+			end)
+		end
+	end
 	frame += 1	
 end
 

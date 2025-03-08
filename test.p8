@@ -15,6 +15,7 @@ do
 	assert(canvas.pget(42, 42) == 7)
 	assert(canvas.pget(43, 42) == 8)
 	assert(canvas.pget(44, 42) == 0)
+	assert(canvas.pget(256, 12973) == 0)
 end
 
 do

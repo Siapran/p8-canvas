@@ -1,13 +1,4 @@
 function make_canvas(cache_bank, render_bank, transparency)
-	
-	local function read_tile(src)
-		local res = ""
-		for i=1,8 do
-			res ..= chr(peek(src, 4))
-			src += 64
-		end
-		return res
-	end
 
 	local function write_tile(tile, dst)
 		local off = 1
@@ -34,22 +25,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 	end
 
 	for i=0,255 do
-		push_node{ sprnum = i,
-			addr = cache_addr | i<<5 & 0xfe00 | i<<2 & 0x3c }
-	end
-
-	local function cached_tile(tile)
-		local node = cache[tile]
-		if not node then
-			node = list.prev
-			if (node.owner) cache[node.owner] = nil
-			write_tile(tile, node.addr)
-			node.owner = tile
-			cache[tile] = node
-		end
-		node.prev.next, node.next.prev = node.next, node.prev
-		push_node(node)
-		return node
+		push_node{false, i, cache_addr | i<<5 & 0xfe00 | i<<2 & 0x3c}
 	end
 
 	local function pushed_ctx(bank, fn)
@@ -62,7 +38,7 @@ function make_canvas(cache_bank, render_bank, transparency)
 		end
 	end
 
-	local canv_draw = pushed_ctx(0x5f54, function(cx, cy, w, h, sx, sy)
+	local function draw_impl(cx, cy, w, h, sx, sy)
 		poke(0x5f54, cache_bank)
 		clip(sx, sy, w, h, true)
 		
@@ -76,17 +52,27 @@ function make_canvas(cache_bank, render_bank, transparency)
 			local sy = y0+y>>>16
 			for x=0,tw,8 do
 				local tile = tiles[x0+x|sy]
-				if (tile) spr(cached_tile(tile).sprnum, x, y)
+				if tile then
+					local node = cache[tile]
+					if not node then
+						node = list.prev
+						write_tile(tile, node[3])
+						node[1], cache[tile], cache[node[1]] = tile, node
+					end
+					node.prev.next, node.next.prev = node.next, node.prev
+					push_node(node)
+					spr(node[2], x, y)
+				end
 			end
 		end
-	end)
+	end
 
 	return {
-		draw = function(sx, sy, w, h, dx, dy)
-			if (not sx) return canv_draw(%0x5f28, %0x5f2a, 128, 128, 0, 0)
-			return canv_draw(
+		draw = pushed_ctx(0x5f54, function(sx, sy, w, h, dx, dy)
+			if (not sx) return draw_impl(%0x5f28, %0x5f2a, 128, 128, 0, 0)
+			return draw_impl(
 				sx, sy, w or 128, h or 128, (dx or 0)-%0x5f28, (dy or 0)-%0x5f2a)
-		end,
+		end),
 		update = pushed_ctx(0x5f55, function(x, y, w, h, draw)
 			local tx, ty, tw, th = x&-8, y&-8, mid(w+7,120), mid(h+7,120)
 			camera(tx, ty)
@@ -109,7 +95,11 @@ function make_canvas(cache_bank, render_bank, transparency)
 			draw()
 
 			iter(function(idx, addr)
-				local tile = read_tile(addr)
+				local tile = ""
+				for i=1,8 do
+					tile ..= chr(peek(addr, 4))
+					addr += 64
+				end
 				tiles[idx] = tile ~= empty_tile and tile or nil
 			end)
 		end),
